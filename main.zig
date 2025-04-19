@@ -1,124 +1,114 @@
 const std = @import("std");
-const os = std.os;
-const io = std.io;
-const fs = std.fs;
-const time = std.time;
+const c = @cImport({
+    @cInclude("raylib.h");
+});
 
 const Player = struct {
-    x: usize,
-    y: usize,
+    x: f32,
+    y: f32,
+    size: f32,
+    speed: f32,
+    color: c.Color,
 };
 
-var player = Player{
-    .x = 0,
-    .y = 2,
-};
-
-const SCREEN_WIDTH = 10;
-const SCREEN_HEIGHT = 5;
-var game_running = true;
-
-// Input handling
-const Direction = enum {
-    Up,
-    Down,
-    Left,
-    Right,
-    None,
-};
-
-fn getInput() !Direction {
-    var buffer: [1]u8 = undefined;
-    const stdin = io.getStdIn();
-    
-    // Simple non-blocking input check
-    // This is a simplified approach - doesn't use raw mode
-    const bytes_read = stdin.read(&buffer) catch 0;
-    if (bytes_read == 0) return Direction.None;
-    
-    return switch (buffer[0]) {
-        'w' => Direction.Up,
-        's' => Direction.Down,
-        'a' => Direction.Left,
-        'd' => Direction.Right,
-        'q' => {
-            game_running = false;
-            return Direction.None;
-        },
-        else => Direction.None,
-    };
-}
+// Game constants
+const SCREEN_WIDTH = 800;
+const SCREEN_HEIGHT = 450;
+const GRID_SIZE = 20;
 
 pub fn main() !void {
-    const stdout = io.getStdOut().writer();
+    // Initialize window
+    c.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Game Engine - Zig + Raylib");
+    defer c.CloseWindow();
     
-    // Set up terminal for game
-    try stdout.print("Game starting. Controls: WASD to move, Q to quit\n", .{});
-    time.sleep(2 * time.ns_per_s);
+    // Set target FPS
+    c.SetTargetFPS(60);
     
-    while (game_running) {
-        // Handle input
-        const input = try getInput();
+    // Initialize player
+    var player = Player{
+        .x = SCREEN_WIDTH / 2,
+        .y = SCREEN_HEIGHT / 2,
+        .size = 20,
+        .speed = 4.0,
+        .color = c.BLUE,
+    };
+    
+    // Game loop
+    while (!c.WindowShouldClose()) {
+        // Update
+        updatePlayer(&player);
         
-        // Update game state
-        update(input);
-        
-        // Render screen
-        try render();
-        
-        // Frame timing
-        time.sleep(100 * time.ns_per_ms);
+        // Draw
+        c.BeginDrawing();
+        c.ClearBackground(c.RAYWHITE);
+        renderGrid();
+        renderPlayer(player);
+        renderUI();
+        c.EndDrawing();
     }
-    
-    try stdout.print("Exiting game loop.\n", .{});
-}
-fn update(input: Direction) void {
-    // Handle player movement based on input
-    switch (input) {
-        .Up => {
-            if (player.y > 0) player.y -= 1;
-        },
-        .Down => {
-            if (player.y < SCREEN_HEIGHT - 1) player.y += 1;
-        },
-        .Left => {
-            if (player.x > 0) player.x -= 1;
-        },
-        .Right => {
-            if (player.x < SCREEN_WIDTH - 1) player.x += 1;
-        },
-        .None => {}, // No movement
-    }
-}
-fn clearScreen() !void {
-    const stdout = io.getStdOut().writer();
-    // ANSI escape code to clear screen and move cursor to top-left
-    try stdout.print("\x1B[2J\x1B[H", .{});
 }
 
-fn render() !void {
-    try clearScreen();
-    
-    const stdout = io.getStdOut().writer();
-    // Create screen buffer
-    var screen: [SCREEN_HEIGHT][SCREEN_WIDTH]u8 = undefined;
-    
-    // Fill with dots (using indices for assignment)
-    for (0..SCREEN_HEIGHT) |y| {
-        for (0..SCREEN_WIDTH) |x| {
-            screen[y][x] = '.';
-        }
+fn updatePlayer(player: *Player) void {
+    // Handle input for player movement
+    if (c.IsKeyDown(c.KEY_W) or c.IsKeyDown(c.KEY_UP)) {
+        player.y -= player.speed;
+    }
+    if (c.IsKeyDown(c.KEY_S) or c.IsKeyDown(c.KEY_DOWN)) {
+        player.y += player.speed;
+    }
+    if (c.IsKeyDown(c.KEY_A) or c.IsKeyDown(c.KEY_LEFT)) {
+        player.x -= player.speed;
+    }
+    if (c.IsKeyDown(c.KEY_D) or c.IsKeyDown(c.KEY_RIGHT)) {
+        player.x += player.speed;
     }
     
-    // Place player
-    screen[player.y][player.x] = 'P';
+    // Keep player within screen bounds
+    if (player.x < 0) player.x = 0;
+    if (player.x > SCREEN_WIDTH - player.size) player.x = SCREEN_WIDTH - player.size;
+    if (player.y < 0) player.y = 0;
+    if (player.y > SCREEN_HEIGHT - player.size) player.y = SCREEN_HEIGHT - player.size;
+}
+
+fn renderGrid() void {
+    // Draw grid for better visual reference
+    const lightGray = c.Color{ .r = 230, .g = 230, .b = 230, .a = 255 };
     
-    // Print screen
-    for (screen) |row| {
-        try stdout.print("{s}\n", .{row});
+    // Draw vertical lines
+    var x: i32 = 0;
+    while (x < SCREEN_WIDTH) : (x += GRID_SIZE) {
+        c.DrawLine(x, 0, x, SCREEN_HEIGHT, lightGray);
     }
     
-    // Print game info
-    try stdout.print("---\nPosition: ({}, {})\n", .{player.x, player.y});
-    try stdout.print("Controls: WASD to move, Q to quit\n", .{});
+    // Draw horizontal lines
+    var y: i32 = 0;
+    while (y < SCREEN_HEIGHT) : (y += GRID_SIZE) {
+        c.DrawLine(0, y, SCREEN_WIDTH, y, lightGray);
+    }
+}
+
+fn renderPlayer(player: Player) void {
+    // Draw player
+    c.DrawRectangle(
+        @intFromFloat(player.x), 
+        @intFromFloat(player.y), 
+        @intFromFloat(player.size), 
+        @intFromFloat(player.size), 
+        player.color
+    );
+    
+    // Draw player outline
+    c.DrawRectangleLines(
+        @intFromFloat(player.x), 
+        @intFromFloat(player.y), 
+        @intFromFloat(player.size), 
+        @intFromFloat(player.size), 
+        c.BLACK
+    );
+}
+
+fn renderUI() void {
+    // Draw game info
+    c.DrawText("Game Engine Demo - Move with Arrow Keys or WASD", 20, 20, 20, c.DARKGRAY);
+    c.DrawFPS(SCREEN_WIDTH - 100, 10);
 }
