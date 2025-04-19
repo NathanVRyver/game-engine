@@ -1,0 +1,35 @@
+{
+  "id": "lost_item",
+  "title": "The Lost Amulet",
+  "description": "Find the villager's lost amulet in the forest.",
+  "type": "Side",
+  "status": "NotStarted",
+  "objectives": [
+    {
+      "id": "find_amulet",
+      "description": "Find the lost amulet",
+      "type": "CollectItem",
+      "target_id": "item_amulet",
+      "required_count": 1,
+      "current_count": 0,
+      "completed": false
+    },
+    {
+      "id": "return_amulet",
+      "description": "Return the amulet to the villager",
+      "type": "TalkToNPC",
+      "target_id": "npc_villager",
+      "required_count": 1,
+      "current_count": 0,
+      "completed": false
+    }
+  ],
+  "rewards": [
+    {
+      "item_id": null,
+      "gold": 50,
+      "experience": 100,
+      "flag_name": "quest_lost_item_completed"
+    }
+  ]
+}

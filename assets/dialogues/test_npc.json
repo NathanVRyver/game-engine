@@ -1,0 +1,73 @@
+{
+  "id": "test_npc",
+  "start_node_id": "greeting",
+  "nodes": [
+    {
+      "id": "greeting",
+      "speaker": "Villager",
+      "text": "Hello, traveler! What brings you to our village?",
+      "options": [
+        {
+          "text": "I'm looking for adventure",
+          "next_node_id": "quest"
+        },
+        {
+          "text": "Just passing through",
+          "next_node_id": "farewell"
+        }
+      ]
+    },
+    {
+      "id": "quest",
+      "speaker": "Villager",
+      "text": "Ah, an adventurer! Would you help me with something?",
+      "options": [
+        {
+          "text": "Sure, what do you need?",
+          "next_node_id": "quest_details",
+          "action": "StartQuest",
+          "action_data": {
+            "quest_id": "lost_item"
+          }
+        },
+        {
+          "text": "Not now",
+          "next_node_id": "farewell"
+        }
+      ]
+    },
+    {
+      "id": "quest_details",
+      "speaker": "Villager",
+      "text": "Great! I lost my lucky amulet in the forest. Can you find it for me?",
+      "options": [
+        {
+          "text": "I'll look for it",
+          "next_node_id": "farewell"
+        }
+      ]
+    },
+    {
+      "id": "quest_complete",
+      "speaker": "Villager",
+      "text": "You found my amulet! Thank you so much! Here's a reward for your help.",
+      "options": [
+        {
+          "text": "You're welcome",
+          "next_node_id": "farewell"
+        }
+      ]
+    },
+    {
+      "id": "farewell",
+      "speaker": "Villager",
+      "text": "Safe travels, friend!",
+      "options": [
+        {
+          "text": "Goodbye",
+          "next_node_id": "exit"
+        }
+      ]
+    }
+  ]
+}
